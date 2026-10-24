@@ -1128,6 +1128,7 @@ test('SPACE skips ahead through the ending', function () {
 
 test('the credits say the game is by Benjamin Leonard-Williams and list everyone', function () {
   assert.strictEqual(MR.Ending.CREATOR, 'Benjamin Leonard-Williams');
+  assert.strictEqual(MR.Ending.ARTISTS, 'Ben & Seb Leonard-Williams', 'characters drawn by');
   var names = MR.Ending.CAST.map(function (c) { return c.name; }).join(', ');
   ['Man Ray', '4 Bunny', 'Spiky', 'Gerald', 'The God of the Zillas', 'Octo-Pie', 'Tri-Terror', 'Booty', 'Bee Bot', 'The Instructor']
     .forEach(function (n) { assert.ok(names.indexOf(n) >= 0, n); });

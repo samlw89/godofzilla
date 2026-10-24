@@ -1,6 +1,6 @@
 # Man Ray
 
-Game by Benjamin Leonard-Williams. All characters drawn by Benjamin
+Game by Benjamin Leonard-Williams. All characters drawn by Ben & Seb
 Leonard-Williams.
 
 Underwater platform game for ages 5–10: Man Ray swims through five levels to

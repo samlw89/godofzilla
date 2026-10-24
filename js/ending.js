@@ -8,6 +8,7 @@ var MR = MR || {};
 MR.Ending = (function () {
   var W = 960, H = 540;
   var CREATOR = 'Benjamin Leonard-Williams';
+  var ARTISTS = 'Ben & Seb Leonard-Williams';
   var CELEBRATE_TICKS = 420;
   var SCROLL_SPEED = 1.1;
   var MIN_TICKS = 40;
@@ -123,7 +124,7 @@ MR.Ending = (function () {
     });
 
     if (visible(CAST_END + 40)) Art.drawText(ctx, 'All characters drawn by', W / 2, at(CAST_END + 40), 30, '#ffffff');
-    if (visible(CAST_END + 88)) Art.drawText(ctx, CREATOR, W / 2, at(CAST_END + 88), 40, '#ffe66b');
+    if (visible(CAST_END + 88)) Art.drawText(ctx, ARTISTS, W / 2, at(CAST_END + 88), 40, '#ffe66b');
     if (visible(CAST_END + 210)) Art.drawText(ctx, 'Thanks for playing!', W / 2, at(CAST_END + 210), 52, '#a0f06a');
 
     Art.drawPromptRow(ctx, ['Press', { key: 'SPACE' }, 'to skip'], 850, 26, 18);
@@ -159,7 +160,7 @@ MR.Ending = (function () {
   }
 
   return {
-    CREATOR: CREATOR, CAST: CAST, CELEBRATE_TICKS: CELEBRATE_TICKS, CREDITS_HEIGHT: CREDITS_HEIGHT,
+    CREATOR: CREATOR, ARTISTS: ARTISTS, CAST: CAST, CELEBRATE_TICKS: CELEBRATE_TICKS, CREDITS_HEIGHT: CREDITS_HEIGHT,
     create: create, update: update, draw: draw
   };
 })();
