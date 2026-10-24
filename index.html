@@ -2,23 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Man Ray</title>
+  <meta name="description" content="Man Ray: an underwater adventure game by Benjamin Leonard-Williams.">
+  <meta name="theme-color" content="#0b3550">
+
+  <!-- "Add to Home Screen": opens full-screen with its own icon, like an app -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Man Ray">
+
   <style>
     html, body {
       margin: 0;
       height: 100%;
       background: #0b3550;
       overflow: hidden;
+      /* On a touch screen: no zooming, scrolling, bouncing, or text-selection
+         pop-ups when a thumb rests on a button. */
+      touch-action: none;
+      overscroll-behavior: none;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    canvas {
+    #game {
+      position: absolute;
       display: block;
       outline: none;
+    }
+    /* On-screen controls (js/touch.js) */
+    #touch-controls {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+    }
+    #touch-controls .touch-button {
+      position: absolute;
+      pointer-events: auto;
+    }
+    #touch-controls.overlay .touch-button {
+      opacity: 0.6;
     }
   </style>
 </head>
@@ -36,6 +66,7 @@
   <script src="js/world.js"></script>
   <script src="js/themes.js"></script>
   <script src="js/art.js"></script>
+  <script src="js/touch.js"></script>
   <script src="js/background.js"></script>
   <script src="js/instructor.js"></script>
   <script src="js/intro.js"></script>

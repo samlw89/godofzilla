@@ -7,7 +7,7 @@ var assert = require('assert');
 
 var ROOT = path.join(__dirname, '..');
 var FILES = [
-  'js/physics.js', 'js/player.js', 'js/enemies.js', 'js/boss.js', 'js/hazards.js', 'js/ally.js', 'js/pickups.js',
+  'js/input.js', 'js/physics.js', 'js/player.js', 'js/enemies.js', 'js/boss.js', 'js/hazards.js', 'js/ally.js', 'js/pickups.js',
   'js/world.js', 'js/instructor.js', 'js/themes.js', 'js/intro.js', 'js/shop.js', 'js/ending.js',
   'js/levels/level1.js', 'js/levels/level2.js', 'js/levels/level3.js', 'js/levels/level4.js', 'js/levels/level5.js', 'js/levels/common.js'
 ];
@@ -1131,6 +1131,63 @@ test('the credits say the game is by Benjamin Leonard-Williams and list everyone
   var names = MR.Ending.CAST.map(function (c) { return c.name; }).join(', ');
   ['Man Ray', '4 Bunny', 'Spiky', 'Gerald', 'The God of the Zillas', 'Octo-Pie', 'Tri-Terror', 'Booty', 'Bee Bot', 'The Instructor']
     .forEach(function (n) { assert.ok(names.indexOf(n) >= 0, n); });
+});
+
+console.log('Touch screens and game controllers');
+
+test('a touch button holds a key down, and counts as one press', function () {
+  var I = MR.Input;
+  I.endStep();
+  I.setSource('touch', 'ArrowLeft', true);
+  assert.ok(I.isDown('ArrowLeft'));
+  assert.ok(I.wasPressed('ArrowLeft'), 'just pressed');
+  I.endStep();
+  I.setSource('touch', 'ArrowLeft', true);
+  assert.ok(!I.wasPressed('ArrowLeft'), 'holding is not a new press');
+  I.setSource('touch', 'ArrowLeft', false);
+  assert.ok(!I.isDown('ArrowLeft'));
+});
+
+test('touch and controller can hold the same key without fighting', function () {
+  var I = MR.Input;
+  I.endStep();
+  I.setSource('touch', 'Space', true);
+  I.setSource('pad', 'Space', true);
+  I.setSource('touch', 'Space', false);
+  assert.ok(I.isDown('Space'), 'still held by the controller');
+  I.setSource('pad', 'Space', false);
+  assert.ok(!I.isDown('Space'));
+});
+
+test('controller buttons map to the game keys', function () {
+  function pad(pressedButtons, axes) {
+    var buttons = [];
+    for (var i = 0; i < 17; i++) buttons.push({ pressed: pressedButtons.indexOf(i) >= 0 });
+    return { buttons: buttons, axes: axes || [0, 0] };
+  }
+  function keys(p) { var now = {}; MR.Input.readPad(p, now); return Object.keys(now).sort().join(','); }
+  assert.strictEqual(keys(pad([14])), 'ArrowLeft', 'd-pad left');
+  assert.strictEqual(keys(pad([], [0.9, 0])), 'ArrowRight', 'stick right');
+  assert.strictEqual(keys(pad([0])), 'ArrowUp,Enter', 'A flaps (and OKs menus)');
+  assert.strictEqual(keys(pad([2])), 'Space', 'X zaps');
+  assert.strictEqual(keys(pad([3])), 'KeyR', 'Y fires a rocket');
+  assert.strictEqual(keys(pad([9])), 'KeyP', 'Start pauses');
+  assert.strictEqual(keys(pad([], [0.2, 0.1])), '', 'a resting stick does nothing');
+});
+
+test('touch buttons cover every control the game needs', function () {
+  var src = fs.readFileSync(path.join(ROOT, 'js/touch.js'), 'utf8');
+  ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space', 'KeyR', 'KeyP', 'KeyM'].forEach(function (code) {
+    assert.ok(src.indexOf("code: '" + code + "'") >= 0, code);
+  });
+});
+
+test('every page the game needs is published (manifest, icons, scripts)', function () {
+  var html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  var refs = (html.match(/(src|href)="([^"]+)"/g) || []).map(function (m) { return m.split('"')[1]; });
+  refs.forEach(function (f) { assert.ok(fs.existsSync(path.join(ROOT, f)), 'missing ' + f); });
+  var manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+  manifest.icons.forEach(function (ic) { assert.ok(fs.existsSync(path.join(ROOT, ic.src)), 'missing ' + ic.src); });
 });
 
 console.log('Story intro');

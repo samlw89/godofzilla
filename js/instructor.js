@@ -54,10 +54,11 @@ MR.Instructor = (function () {
     ctx.fillRect(0, 230, 270, 310);
     Art.drawInstructor(ctx, 112, 362, ins.frame, ins.frame < 90, 1.12);
 
-    // One short sentence
+    // One short sentence (worded for a touch screen when that's in use)
+    var text = Art.touchText(tip.text);
     var size = 30;
-    while (size > 20 && Art.measureText(ctx, tip.text, size) > bw - 60) size -= 2;
-    Art.drawText(ctx, tip.text, bx + 30, by + 46, size, Art.OUTLINE, 'left', 0);
+    while (size > 20 && Art.measureText(ctx, text, size) > bw - 60) size -= 2;
+    Art.drawText(ctx, text, bx + 30, by + 46, size, Art.OUTLINE, 'left', 0);
 
     // The picture: keys to press, then an icon
     var x = bx + 30;
@@ -69,7 +70,8 @@ MR.Instructor = (function () {
       Art.drawText(ctx, '× ' + tip.times, x, by + 112, 36, Art.OUTLINE, 'left', 0);
       x += Art.measureText(ctx, '× ' + tip.times, 36) + 16;
     }
-    if (tip.icon) Art.drawIcon(ctx, tip.icon, x + 60, by + 112, t);
+    // (On-screen buttons are narrower than keys, so leave a bit more room.)
+    if (tip.icon) Art.drawIcon(ctx, tip.icon, x + 60 + (Art.isTouch() ? 36 : 0), by + 112, t);
 
     // "Next" button that pulses (Space / Enter / click)
     var pulse = 1 + Math.sin(t * 0.12) * 0.08;
@@ -82,12 +84,16 @@ MR.Instructor = (function () {
     ctx.beginPath(); ctx.moveTo(-7, -12); ctx.lineTo(13, 0); ctx.lineTo(-7, 12); ctx.closePath();
     ctx.fillStyle = '#ffffff'; ctx.fill();
     ctx.restore();
-    Art.drawKeyCap(ctx, bx + bw - 210, by + bh - 70, 'SPACE', 0.75);
+    // (On a touch screen, tapping anywhere moves on, so no key is shown.)
+    if (!Art.isTouch()) Art.drawKeyCap(ctx, bx + bw - 210, by + bh - 70, 'SPACE', 0.75);
 
     if (ins.isIntro && canSkip) {
-      Art.drawPromptRow(ctx, ['Press', { key: 'S' }, 'to skip'], 790, 92, 24);
+      Art.drawPromptRow(ctx, ['Press', { key: 'S' }, 'to skip'], SKIP.x, SKIP.y, 24);
     }
   }
 
-  return { create: create, show: show, enqueue: enqueue, next: next, skip: skip, isActive: isActive, draw: draw };
+  // Where "Press S to skip" (a Skip button on touch screens) is drawn.
+  var SKIP = { x: 790, y: 92 };
+
+  return { SKIP: SKIP, create: create, show: show, enqueue: enqueue, next: next, skip: skip, isActive: isActive, draw: draw };
 })();

@@ -88,22 +88,65 @@ var MR = MR || {};
 
   // ---------- setup ----------
 
+  // Fits the game picture to the window. With touch controls on, the
+  // controller strip goes in the spare space below the picture (an iPad is
+  // squarer than the game, so there's room); if there's no room, as on a
+  // phone, the buttons go see-through over the picture instead.
+  var STRIP_MIN = 110;
+
   function resize() {
-    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var s = Math.min(vw / W, vh / H);
+    var top, area = null;
+    if (MR.Touch.isEnabled()) {
+      var spare = vh - H * s;
+      if (spare < STRIP_MIN) {
+        // Shrink the picture a little to make room, if that's enough.
+        var s2 = Math.min(vw / W, (vh - STRIP_MIN) / H);
+        if (s2 >= s * 0.75) { s = s2; spare = vh - H * s; }
+      }
+      if (spare >= STRIP_MIN) {
+        var stripH = Math.min(spare, Math.max(STRIP_MIN, H * s * 0.5));
+        top = Math.max(0, (vh - H * s - stripH) / 2);
+        area = { x: 0, y: top + H * s, w: vw, h: stripH, overlay: false };
+      } else {
+        top = (vh - H * s) / 2;
+        area = { x: (vw - W * s) / 2, y: top, w: W * s, h: H * s, overlay: true };
+      }
+    } else {
+      top = (vh - H * s) / 2;
+    }
     var dpr = window.devicePixelRatio || 1;
     canvas.style.width = Math.floor(W * s) + 'px';
     canvas.style.height = Math.floor(H * s) + 'px';
+    canvas.style.left = Math.floor((vw - W * s) / 2) + 'px';
+    canvas.style.top = Math.floor(top) + 'px';
     canvas.width = Math.round(W * s * dpr);
     canvas.height = Math.round(H * s * dpr);
     pixelScale = canvas.width / W;
+    MR.Touch.layout(area);
+  }
+
+  // Keyboard or touch screen: the controls and prompts follow whichever
+  // the player last used. (A game controller uses the keyboard prompts.)
+  function applyInputMode(mode) {
+    var touch = mode === 'touch';
+    Art.setTouchMode(touch);
+    MR.Touch.setEnabled(touch);
+    resize();
   }
 
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 200); });
   window.addEventListener('blur', function () {
     if (G.state === 'playing' && !Instructor.isActive(G.instructor)) G.paused = true;
   });
   Input.init(canvas, Sound.unlock);
-  resize();
+  MR.Touch.init(Sound.unlock);
+  Input.onModeChange(applyInputMode);
+  var touchScreen = (navigator.maxTouchPoints || 0) > 0 &&
+    window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  Input.setMode(touchScreen ? 'touch' : 'keys');
   canvas.focus();
 
   function setState(s) {
@@ -166,7 +209,10 @@ var MR = MR || {};
   function update() {
     G.t++;
     G.stateTime++;
+    Input.pollGamepads();
     if (Input.wasPressed('KeyM')) Sound.toggleMute();
+    MR.Touch.setMuted(Sound.isMuted());
+    MR.Touch.setVisible('rocket', !!G.upgrades.rocket);
 
     if (G.state === 'title') updateTitle();
     else if (G.state === 'intro') updateIntro();
@@ -211,9 +257,10 @@ var MR = MR || {};
   }
 
   function updateIntro() {
+    var skipTapped = Art.isTouch() && clickedIn(Art.skipRect(MR.Intro.SKIP.x, MR.Intro.SKIP.y));
     var sounds = MR.Intro.update(G.intro, {
-      next: advancePressed(),
-      skip: Input.wasPressed('KeyS') || Input.wasPressed('Escape')
+      next: advancePressed() && !skipTapped,
+      skip: Input.wasPressed('KeyS') || Input.wasPressed('Escape') || skipTapped
     });
     sounds.forEach(Sound.play);
     if (!G.intro.done) return;
@@ -287,13 +334,15 @@ var MR = MR || {};
     var ins = G.instructor;
 
     if (G.paused) {
-      if (pausePressed()) G.paused = false;
+      // A tap or click anywhere carries on too.
+      if (pausePressed() || Input.wasPressed('Click')) G.paused = false;
       return;
     }
 
     if (Instructor.isActive(ins)) {
       ins.frame++;
-      if (ins.isIntro && completedThisLevel() && Input.wasPressed('KeyS')) {
+      var skipTapped = Art.isTouch() && clickedIn(Art.skipRect(Instructor.SKIP.x, Instructor.SKIP.y));
+      if (ins.isIntro && completedThisLevel() && (Input.wasPressed('KeyS') || skipTapped)) {
         Instructor.skip(ins);
         G.banner = BANNER_TICKS;
       } else if (advancePressed()) {

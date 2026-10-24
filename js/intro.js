@@ -176,7 +176,7 @@ MR.Intro = (function () {
       ctx.fillStyle = d <= intro.scene ? '#ffe66b' : 'rgba(255,255,255,0.5)';
       ctx.fill();
     }
-    Art.drawPromptRow(ctx, ['Press', { key: 'S' }, 'to skip'], 838, 24, 20);
+    Art.drawPromptRow(ctx, ['Press', { key: 'S' }, 'to skip'], SKIP.x, SKIP.y, 20);
   }
 
   function speech(ctx, Art, text, x, y, t) {
@@ -188,5 +188,8 @@ MR.Intro = (function () {
     Art.drawText(ctx, text, x, y + bob + 1, 26, Art.OUTLINE, 'center', 0);
   }
 
-  return { SCENES: SCENES, create: create, update: update, draw: draw };
+  // Where "Press S to skip" (a Skip button on touch screens) is drawn.
+  var SKIP = { x: 838, y: 28 };
+
+  return { SCENES: SCENES, SKIP: SKIP, create: create, update: update, draw: draw };
 })();

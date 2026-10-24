@@ -121,8 +121,8 @@ MR.Shop = (function () {
     Art.drawText(ctx, shop.isLast ? 'All done!' : 'Next level', g.x + g.w / 2 - 14, g.y + g.h / 2 - lift + 1, 28, '#ffffff');
     Art.drawArrow(ctx, g.x + g.w - 40, g.y + g.h / 2 - lift, 0, 1.1, '#ffffff');
 
-    Art.drawPromptRow(ctx, [{ key: 'LEFT' }, { key: 'RIGHT' }, 'choose', { key: 'SPACE' }, 'buy'],
-      670, 506, 20);
+    if (Art.isTouch()) Art.drawText(ctx, 'Tap a card to buy it', 670, 506, 22, '#ffffff');
+    else Art.drawPromptRow(ctx, [{ key: 'LEFT' }, { key: 'RIGHT' }, 'choose', { key: 'SPACE' }, 'buy'], 670, 506, 20);
   }
 
   function drawCard(ctx, Art, shop, it, i, t) {

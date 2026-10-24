@@ -23,6 +23,19 @@ rescue his friend 4 Bunny from the God of the Zillas.
 | B (title screen) | Watch the story of how 4 Bunny was stolen (plays by itself before Level 1 the first time) |
 | Space / S (story) | Next scene / skip the story |
 
+**iPad and touch screens:** on-screen buttons appear automatically: ◀ ▶
+swim, ⬆ flap, ⚡ zap, 🚀 rocket (once bought), ⏸ pause, 🔊 sound. On an
+iPad they sit in a controller strip below the game; on a phone they sit
+see-through over it. Tap the game to start, move through tips and pick
+things in the shop. Prompts and the Instructor's tips switch between keys
+and buttons to match whatever the player last used. In Safari, Share → Add to
+Home Screen makes Man Ray open full-screen like an app, with Ben's drawing
+as its icon.
+
+**Game controllers** (Xbox, PlayStation and other standard controllers):
+stick or d-pad to swim, A to flap (and OK on menus), X/B to zap, Y to fire
+a rocket, Start to pause.
+
 **Tests:** `node tests/run-tests.js`
 
 **Swapping in your own drawings:** every character and object is drawn by one

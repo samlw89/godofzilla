@@ -2332,10 +2332,90 @@ MR.Art = (function () {
     return 54;
   }
 
+  // ---------- Touch-screen mode ----------
+  // On a touch screen, prompts and tips show the on-screen buttons instead
+  // of keyboard keys ("Tap" instead of "Press SPACE").
+
+  var touchMode = false;
+  // Which on-screen button stands in for each keyboard key picture.
+  var TOUCH_FOR_KEY = { LEFT: 'left', RIGHT: 'right', UP: 'flap', SPACE: 'zap', R: 'rocket', P: 'pause' };
+
+  function setTouchMode(on) { touchMode = !!on; }
+  function isTouch() { return touchMode; }
+
+  // A tip's words for a touch screen ("Press SPACE" -> "Tap ⚡").
+  function touchText(text) {
+    if (!touchMode) return text;
+    return text
+      .replace(/Press SPACE/g, 'Tap ⚡').replace(/SPACE/g, '⚡')
+      .replace(/Press R\b/g, 'Tap 🚀')
+      .replace(/Press /g, 'Tap ');
+  }
+
+  // One of the on-screen buttons, d across, centred on (x, y). Also used in
+  // prompts and tips. id: left, right, flap, zap, rocket, pause, mute.
+  function drawTouchButton(ctx, x, y, d, id, opts) {
+    opts = opts || {};
+    var colors = { left: '#7be0ff', right: '#7be0ff', flap: '#2b86e0', zap: '#ff5fb8',
+      rocket: '#6f9a45', pause: '#9aa8c0', mute: '#9aa8c0' };
+    var r = d / 2, lift = opts.pressed ? 0 : d * 0.05;
+    ctx.save();
+    ctx.translate(x, y - lift);
+    if (!opts.pressed) {
+      circle(ctx, 0, lift * 2, r - 2);
+      ctx.fillStyle = 'rgba(10,26,48,0.55)'; ctx.fill();
+    }
+    circle(ctx, 0, 0, r - 2);
+    ctx.fillStyle = colors[id] || '#ffffff'; ctx.fill();
+    ctx.lineWidth = Math.max(2, d * 0.05); ctx.strokeStyle = OUTLINE; ctx.stroke();
+    ellipse(ctx, -r * 0.3, -r * 0.42, r * 0.38, r * 0.18, -0.4);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
+    var k = d / 100;
+    ctx.scale(k, k);
+    if (id === 'left' || id === 'right' || id === 'flap') {
+      var a = id === 'left' ? Math.PI : id === 'right' ? 0 : -Math.PI / 2;
+      drawArrow(ctx, 0, 0, a, 2.6, OUTLINE);
+      drawArrow(ctx, 0, 0, a, 2.15, '#ffffff');
+    } else if (id === 'zap') {
+      ctx.beginPath();
+      ctx.moveTo(6, -32); ctx.lineTo(-18, 4); ctx.lineTo(-2, 4); ctx.lineTo(-8, 32);
+      ctx.lineTo(18, -6); ctx.lineTo(2, -6); ctx.closePath();
+      outline(ctx, '#ffe066', 4);
+    } else if (id === 'rocket') {
+      ctx.scale(2.2, 2.2);
+      drawRocket(ctx, { x: -14, y: -6, w: 26, h: 12, vx: 1 }, 0);
+    } else if (id === 'pause') {
+      roundRect(ctx, -18, -22, 13, 44, 4); outline(ctx, '#ffffff', 4);
+      roundRect(ctx, 5, -22, 13, 44, 4); outline(ctx, '#ffffff', 4);
+    } else if (id === 'mute') {
+      ctx.scale(2, 2);
+      drawSpeaker(ctx, -4, 0, opts.muted);
+    }
+    ctx.restore();
+  }
+
+  // The tappable "Skip" button that replaces "Press S to skip" on touch
+  // screens. skipRect gives where to tap.
+  function skipRect(cx, cy) { return { x: cx - 74, y: cy - 24, w: 148, h: 48 }; }
+  function drawSkipButton(ctx, cx, cy) {
+    var r = skipRect(cx, cy);
+    roundRect(ctx, r.x, r.y, r.w, r.h, r.h / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = OUTLINE; ctx.stroke();
+    drawText(ctx, 'Skip', cx - 14, cy + 1, 24, OUTLINE, 'center', 0);
+    drawArrow(ctx, cx + 30, cy, 0, 0.75, OUTLINE);
+    drawArrow(ctx, cx + 44, cy, 0, 0.75, OUTLINE);
+  }
+
   // Draws a keyboard key picture with its top-left at (x, y).
-  // Returns the width used.
+  // Returns the width used. On a touch screen it draws the matching
+  // on-screen button instead (where there is one).
   function drawKeyCap(ctx, x, y, label, scale) {
     var k = scale || 1;
+    if (touchMode && TOUCH_FOR_KEY[label]) {
+      drawTouchButton(ctx, x + 28 * k, y + 28 * k, 56 * k, TOUCH_FOR_KEY[label]);
+      return 56 * k;
+    }
     var w = keyCapWidth(label), h = 52;
     ctx.save();
     ctx.translate(x, y);
@@ -2373,10 +2453,27 @@ MR.Art = (function () {
 
   // Lays out a centred row of words and key pictures, e.g.
   //   ['Press', { key: 'SPACE' }, 'to start']
+  // On a touch screen: "Press SPACE / P" becomes "Tap", "Press S to skip"
+  // becomes a tappable Skip button, and keys with no on-screen button are
+  // left out.
   function drawPromptRow(ctx, parts, cx, cy, size, color) {
+    if (touchMode) {
+      var out = [];
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i], nx = parts[i + 1];
+        if (typeof p === 'string' && /^press$/i.test(p) && nx && nx.key) {
+          if (nx.key === 'S') { drawSkipButton(ctx, cx, cy); return; }
+          if (nx.key === 'SPACE' || nx.key === 'P' || nx.key === 'ENTER') { out.push('Tap'); i++; continue; }
+        }
+        if (typeof p !== 'string' && !TOUCH_FOR_KEY[p.key]) continue;
+        out.push(p);
+      }
+      parts = out;
+    }
     var k = size / 34, gap = 12;
     var widths = parts.map(function (p) {
-      return typeof p === 'string' ? measureText(ctx, p, size) : keyCapWidth(p.key) * k;
+      if (typeof p === 'string') return measureText(ctx, p, size);
+      return (touchMode ? 56 : keyCapWidth(p.key)) * k;
     });
     var total = widths.reduce(function (a, b) { return a + b + gap; }, -gap);
     var x = cx - total / 2;
@@ -2392,8 +2489,8 @@ MR.Art = (function () {
     roundRect(ctx, r.x, r.y, r.w, r.h, r.h / 2);
     ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
     ctx.lineWidth = 3; ctx.strokeStyle = OUTLINE; ctx.stroke();
-    drawKeyCap(ctx, r.x + 12, r.y + 8, 'T', 0.56);
-    drawText(ctx, 'Tips', r.x + 52, r.y + r.h / 2 + 1, 22, OUTLINE, 'left', 0);
+    if (!touchMode) drawKeyCap(ctx, r.x + 12, r.y + 8, 'T', 0.56);
+    drawText(ctx, 'Tips', r.x + (touchMode ? 30 : 52), r.y + r.h / 2 + 1, 22, OUTLINE, 'left', 0);
     var tx = r.x + r.w - 76, ty = r.y + 10, tw = 64, th = 28;
     roundRect(ctx, tx, ty, tw, th, th / 2);
     ctx.fillStyle = on ? '#4cc36a' : '#9aa8c0'; ctx.fill();
@@ -2414,8 +2511,8 @@ MR.Art = (function () {
     ctx.beginPath(); ctx.rect(r.x - 10, r.y - 60, 80, r.h + 56); ctx.clip();
     drawFourBunny(ctx, r.x + 34, r.y + 66 + Math.sin(t * 0.08) * 2, t, { scale: 0.48 });
     ctx.restore();
-    drawKeyCap(ctx, r.x + 76, r.y + 8, 'B', 0.56);
-    drawText(ctx, 'Story', r.x + 114, r.y + r.h / 2 + 1, 22, OUTLINE, 'left', 0);
+    if (!touchMode) drawKeyCap(ctx, r.x + 76, r.y + 8, 'B', 0.56);
+    drawText(ctx, 'Story', r.x + (touchMode ? 86 : 114), r.y + r.h / 2 + 1, 22, OUTLINE, 'left', 0);
   }
 
   // The title screen's level picker: "Level (1) (2) (3)". Locked levels
@@ -2556,6 +2653,12 @@ MR.Art = (function () {
     measureText: measureText,
     drawTitle: drawTitle,
     drawKeyCap: drawKeyCap,
+    setTouchMode: setTouchMode,
+    isTouch: isTouch,
+    touchText: touchText,
+    drawTouchButton: drawTouchButton,
+    drawSkipButton: drawSkipButton,
+    skipRect: skipRect,
     drawArrow: drawArrow,
     drawPromptRow: drawPromptRow,
     drawSpeaker: drawSpeaker,
